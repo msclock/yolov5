@@ -72,14 +72,21 @@ class TritonRemoteModel:
         if args_len and kwargs_len:
             raise RuntimeError('Cannot specify args and kwargs at the same time')
 
+        def fit_minus_shape(input_shape,val_shape):
+            for idx, iv in enumerate(input_shape):
+                if iv == -1:
+                    input_shape[idx] = val_shape[idx]
+
         placeholders = self._create_input_placeholders_fn()
         if args_len:
             if args_len != len(placeholders):
                 raise RuntimeError(f'Expected {len(placeholders)} inputs, got {args_len}.')
             for input, value in zip(placeholders, args):
+                fit_minus_shape(input._shape,value.shape)
                 input.set_data_from_numpy(value.cpu().numpy())
         else:
             for input in placeholders:
                 value = kwargs[input.name]
+                fit_minus_shape(input._shape,value.shape)
                 input.set_data_from_numpy(value.cpu().numpy())
         return placeholders
